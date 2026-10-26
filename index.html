@@ -106,9 +106,9 @@
       max-height: 68vh;
       object-fit: contain;
       background: #111827;
-      /* Sengaja tidak dicerminkan. */
-      transform: none;
-      -webkit-transform: none;
+      /* Diubah agar tidak mirror */
+      transform: scaleX(-1);
+      -webkit-transform: scaleX(-1);
     }
 
     canvas {
@@ -286,8 +286,8 @@
         });
 
         video.srcObject = cameraStream;
-        video.style.transform = "none";
-        video.style.webkitTransform = "none";
+        video.style.transform = "scaleX(-1)";
+        video.style.webkitTransform = "scaleX(-1)";
 
         await new Promise((resolve, reject) => {
           if (video.readyState >= 2 && video.videoWidth > 0) {
@@ -338,7 +338,6 @@
         return;
       }
 
-      // Mengambil frame asli video tanpa membalik foto.
       context.drawImage(video, 0, 0, photoCanvas.width, photoCanvas.height);
 
       capturedPhoto = true;
