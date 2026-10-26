@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Uji Kamera BISAMA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 640px;
+      margin: 30px auto;
+      padding: 16px;
+      text-align: center;
+    }
+    video {
+      width: 100%;
+      background: #111;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    button, select {
+      padding: 12px;
+      margin: 5px;
+      max-width: 100%;
+    }
+    #status {
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <h2>Uji Kamera BISAMA</h2>
+  <p>Halaman ini hanya menguji kamera perangkat.</p>
+
+  <select id="cameraList" aria-label="Pilih kamera">
+    <option value="">Kamera otomatis</option>
+  </select>
+
+  <div>
+    <button id="start">Aktifkan Kamera</button>
+    <button id="stop">Matikan Kamera</button>
+  </div>
+
+  <video id="video" autoplay playsinline muted></video>
+  <p id="status">Kamera belum diaktifkan.</p>
+
+  <script>
+    const video = document.getElementById("video");
+    const cameraList = document.getElementById("cameraList");
+    const statusText = document.getElementById("status");
+    let currentStream = null;
+
+    async function loadCameras() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const previous = cameraList.value;
+
+      cameraList.replaceChildren(new Option("Kamera otomatis", ""));
+
+      devices.filter(d => d.kind === "videoinput").forEach((d, i) => {
+        cameraList.add(new Option(d.label || `Kamera ${i + 1}`, d.deviceId));
+      });
+
+      if ([...cameraList.options].some(o => o.value === previous)) {
+        cameraList.value = previous;
+      }
+    }
+
+    async function stopCamera() {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      video.srcObject = null;
+    }
+
+    async function startCamera() {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("Akses kamera tidak tersedia. Pastikan halaman memakai HTTPS.");
+        }
+
+        await stopCamera();
+
+        const id = cameraList.value;
+        const constraints = id
+          ? { deviceId: { exact: id } }
+          : { facingMode: "user" };
+
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: constraints,
+          audio: false
+        });
+
+        video.srcObject = currentStream;
+        await video.play();
+        await loadCameras();
+
+        if (id) cameraList.value = id;
+        statusText.textContent = "Kamera aktif. Pengujian berhasil.";
+      } catch (error) {
+        statusText.textContent = "Kamera gagal: " + error.name + " — " + error.message;
+      }
+    }
+
+    document.getElementById("start").addEventListener("click", startCamera);
+
+    document.getElementById("stop").addEventListener("click", async () => {
+      await stopCamera();
+      statusText.textContent = "Kamera telah dimatikan.";
+    });
+
+    cameraList.addEventListener("change", startCamera);
+
+    if (navigator.mediaDevices?.enumerateDevices) {
+      loadCameras().catch(() => {});
+    }
+  </script>
+</body>
+</html>
